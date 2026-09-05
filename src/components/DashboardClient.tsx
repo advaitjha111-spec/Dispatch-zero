@@ -21,6 +21,10 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioAnalyserRef = useRef<AnalyserNode | null>(null);
+  const animationFrameRef = useRef<number>(0);
+  const [volLevel, setVolLevel] = useState(0);
+
   const deepgramSocketRef = useRef<any>(null);
   const cartesiaClientRef = useRef<any>(null);
   const cartesiaWsRef = useRef<any>(null);
@@ -50,9 +54,26 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       const agentTrack = new LocalAudioTrack(destNodeRef.current.stream.getAudioTracks()[0]);
       await room.localParticipant.publishTrack(agentTrack, { name: 'agent-tts' });
 
-      // 3. Setup Deepgram
+      // 3. Setup Deepgram & Mic
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
+      // Setup Analyser for Visualizer
+      const sourceNode = audioContextRef.current.createMediaStreamSource(stream);
+      const analyser = audioContextRef.current.createAnalyser();
+      analyser.fftSize = 256;
+      sourceNode.connect(analyser);
+      audioAnalyserRef.current = analyser;
+
+      const updateVol = () => {
+        if (!audioAnalyserRef.current) return;
+        const dataArray = new Uint8Array(audioAnalyserRef.current.frequencyBinCount);
+        audioAnalyserRef.current.getByteFrequencyData(dataArray);
+        const avg = dataArray.reduce((a, b) => a + b) / dataArray.length;
+        setVolLevel(avg);
+        animationFrameRef.current = requestAnimationFrame(updateVol);
+      };
+      updateVol();
+
       // Publish User Mic to LiveKit
       const userTrack = new LocalAudioTrack(stream.getAudioTracks()[0]);
       await room.localParticipant.publishTrack(userTrack, { name: 'user-mic' });
@@ -195,8 +216,32 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    };
+  }, []);
+
+  // Glow Cursor Logic
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => setMousePos({ x: e.clientX, y: e.clientY });
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   return (
-    <div className="h-screen w-full bg-true-black text-offwhite overflow-hidden p-4 font-sans select-none flex flex-col gap-4">
+    <div className="h-screen w-full bg-true-black text-offwhite overflow-hidden p-4 font-sans select-none flex flex-col gap-4 cursor-none relative">
+      {/* Glow Cursor */}
+      <motion.div
+        className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center mix-blend-screen"
+        animate={{ x: mousePos.x - 16, y: mousePos.y - 16 }}
+        transition={{ type: "tween", ease: "linear", duration: 0 }}
+      >
+        <div className="w-8 h-8 rounded-full border border-neon-cyan/50 shadow-[0_0_15px_rgba(0,240,255,0.8)]" />
+        <div className="absolute w-1 h-1 bg-neon-cyan rounded-full shadow-[0_0_5px_rgba(0,240,255,1)]" />
+      </motion.div>
+
       {/* Header */}
       <header className="flex justify-between items-center px-4 py-2 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
@@ -228,7 +273,21 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
         <section className="col-span-3 border border-white/10 bg-obsidian/50 rounded-lg flex flex-col overflow-hidden relative">
           <div className="p-3 border-b border-white/10 bg-white/5 shrink-0 flex items-center justify-between">
             <h2 className="text-xs uppercase font-mono tracking-widest text-white/60">Live Feed</h2>
-            <Mic className={`w-4 h-4 ${isActive ? 'text-pulse-red' : 'text-white/20'}`} />
+            <div className="flex items-center gap-2">
+              {isActive && (
+                <div className="flex items-end gap-[2px] h-4 w-12 mr-2">
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div 
+                      key={i}
+                      className="w-1 bg-pulse-red rounded-t-sm"
+                      animate={{ height: `${Math.max(10, (volLevel / 255) * 100 * (Math.random() * 0.5 + 0.5))}%` }}
+                      transition={{ type: 'tween', duration: 0.1 }}
+                    />
+                  ))}
+                </div>
+              )}
+              <Mic className={`w-4 h-4 ${isActive ? 'text-pulse-red' : 'text-white/20'}`} />
+            </div>
           </div>
           <div className="flex-1 p-4 overflow-y-auto font-mono text-sm flex flex-col gap-3">
             {transcript.map((msg, i) => (
@@ -289,10 +348,11 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
                 <span className="text-xs uppercase tracking-widest text-neon-cyan font-semibold">Moss Retrieval</span>
                 <div className="flex items-baseline gap-1">
                   <motion.span 
+                    layout
                     key={metrics.moss}
-                    initial={{ opacity: 0.5, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-3xl font-bold text-neon-cyan tracking-tighter"
+                    initial={{ opacity: 0.5, y: -5, filter: 'blur(4px)' }}
+                    animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                    className="text-3xl font-bold text-neon-cyan tracking-tighter tabular-nums"
                   >
                     {metrics.moss}
                   </motion.span>
@@ -307,10 +367,11 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
               <span className="text-sm uppercase tracking-widest text-white/80">Total RTT</span>
               <div className="flex items-baseline gap-1">
                 <motion.span 
+                  layout
                   key={metrics.total}
                   initial={{ scale: 0.9 }}
                   animate={{ scale: 1 }}
-                  className="text-2xl font-bold text-emerald-green tracking-tighter"
+                  className="text-2xl font-bold text-emerald-green tracking-tighter tabular-nums"
                 >
                   {metrics.total}
                 </motion.span>
@@ -331,10 +392,11 @@ function MetricRow({ label, value, unit }: { label: string, value: number, unit:
       <span className="text-xs uppercase tracking-widest text-white/60">{label}</span>
       <div className="flex items-baseline gap-1">
         <motion.span 
+          layout
           key={value}
           initial={{ opacity: 0.5, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-xl font-bold text-white tracking-tighter"
+          className="text-xl font-bold text-white tracking-tighter tabular-nums"
         >
           {value}
         </motion.span>
