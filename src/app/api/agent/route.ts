@@ -71,7 +71,7 @@ ${context}
         { role: 'system', content: systemPrompt },
         { role: 'user', content: transcript }
       ],
-      model: 'groq/compound-mini',
+      model: 'openai/gpt-oss-20b',
       stream: true,
       max_tokens: 150,
       temperature: 0.1,
