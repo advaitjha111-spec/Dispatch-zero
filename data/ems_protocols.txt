@@ -1,0 +1,34 @@
+PROTOCOL ID: DOT-ERG-119
+HAZMAT: ANHYDROUS AMMONIA (UN 1005)
+SCENARIO: CHEMICAL SPILL OR LEAK
+IMMEDIATE ACTIONS:
+1. Isolate spill or leak area immediately for at least 100 meters (330 feet) in all directions.
+2. Keep unauthorized personnel away. Stay upwind, uphill and/or upstream.
+3. Ventilate closed spaces before entering, but only if wearing self-contained breathing apparatus (SCBA).
+HEALTH HAZARDS:
+- TOXIC; may be fatal if inhaled, ingested or absorbed through skin.
+- Contact with gas or liquefied gas may cause burns, severe injury and/or frostbite.
+FIRE ACTIONS:
+- Small Fire: Dry chemical or CO2.
+- Large Fire: Water spray, fog or regular foam. Do not get water inside containers.
+
+PROTOCOL ID: DOT-ERG-128
+HAZMAT: FLAMMABLE LIQUIDS (NON-POLAR / WATER-IMMISCIBLE)
+SCENARIO: HIGHWAY TRANSPORT FIRE
+IMMEDIATE ACTIONS:
+1. Isolate spill or leak area for at least 50 meters (150 feet) in all directions.
+2. Eliminate all ignition sources (no smoking, flares, sparks, or flames in immediate area).
+3. All equipment used when handling the product must be grounded.
+FIRE ACTIONS:
+- Small Fire: Dry chemical, CO2, water spray or regular foam.
+- Large Fire: Water spray, fog or regular foam. Use water spray or fog; do not use straight streams.
+- Move containers from fire area if you can do it without risk.
+
+PROTOCOL ID: EMS-CPR-01
+SCENARIO: ADULT CARDIAC ARREST (NO PULSE, NOT BREATHING)
+IMMEDIATE ACTIONS:
+1. Dispatch nearest ALS (Advanced Life Support) unit immediately.
+2. Instruct the bystander to place the patient flat on their back on a hard surface.
+3. Instruct the bystander to begin chest compressions immediately: Push hard and fast in the center of the chest (100 to 120 compressions per minute).
+4. Depth of compressions should be at least 2 inches (5 cm).
+5. Do not stop compressions to check for a pulse. Continue until the ALS unit arrives or an AED is ready to analyze.
