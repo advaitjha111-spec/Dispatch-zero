@@ -119,6 +119,8 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
         }
       });
       
+      socket.connect();
+      
     } catch (err) {
       console.error("Pipeline start failed", err);
     }
