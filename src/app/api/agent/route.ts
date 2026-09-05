@@ -37,7 +37,7 @@ async function getMossContext(query: string): Promise<{ context: string; latency
     ? results.docs[0].text 
     : "PROTOCOL ID: UNKNOWN\nFollow standard emergency dispatch procedures.";
 
-  return { context, latencyMs: Math.min(end - start, 9.99) };
+  return { context, latencyMs: end - start };
 }
 
 export async function POST(req: Request) {

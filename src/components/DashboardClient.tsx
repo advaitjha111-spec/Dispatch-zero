@@ -17,8 +17,11 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
     stt: 0,
     moss: 0,
     llm: 0,
+    cartesia: 0,
     total: 0,
   });
+
+  const lastAudioSentTimeRef = useRef<number>(0);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioAnalyserRef = useRef<AnalyserNode | null>(null);
@@ -93,6 +96,7 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
         
         mediaRecorderRef.current.addEventListener('dataavailable', event => {
           if (event.data.size > 0 && socket.readyState === 1) {
+            lastAudioSentTimeRef.current = performance.now();
             socket.sendMedia(event.data);
           }
         });
@@ -106,7 +110,7 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
         if (data.type === "Results") {
           const text = data.channel.alternatives[0].transcript;
           if (text && data.is_final) {
-            const sttTime = 250; 
+            const sttTime = Math.max(0, Math.round(performance.now() - lastAudioSentTimeRef.current)); 
             setMetrics(m => ({ ...m, stt: sttTime }));
             setTranscript(prev => [...prev, { role: "user", text }]);
             
@@ -155,10 +159,17 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       
       let tMoss = 0;
       let firstTokenTime = 0;
+      let cartesiaFirstByteTime = 0;
+      let pushTime = 0;
       
       const receiveAudio = async () => {
         for await (const event of ctx.receive()) {
           if (event.type === 'chunk' && event.audio) {
+            if (cartesiaFirstByteTime === 0 && pushTime > 0) {
+              cartesiaFirstByteTime = performance.now();
+              const cartesiaLatency = Math.round(cartesiaFirstByteTime - pushTime);
+              setMetrics(m => ({ ...m, cartesia: cartesiaLatency, total: Math.round(sttTime + tMoss + (firstTokenTime - t0) + cartesiaLatency) }));
+            }
             const audioCtx = audioContextRef.current;
             if (!audioCtx) continue;
             
@@ -217,16 +228,16 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
               llmText += data.content;
               const contentToPush = data.content;
               if (contentToPush.trim().length > 0) {
-                hasPushedTokens = true;
+                if (!hasPushedTokens) {
+                  pushTime = performance.now();
+                  hasPushedTokens = true;
+                }
                 await ctx.push({ transcript: contentToPush });
               }
             }
           } catch(e) {}
         }
       }
-      
-      // Calculate Total RTT
-      setMetrics(m => ({ ...m, total: Math.round(sttTime + tMoss + (firstTokenTime - t0) + 120) })); 
 
       setTranscript(prev => [...prev, { role: "agent", text: llmText }]);
       isAgentSpeaking.current = false;
@@ -383,6 +394,7 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
             </div>
 
             <MetricRow label="LLM Inference" value={metrics.llm} unit="ms" />
+            <MetricRow label="Cartesia TTS" value={metrics.cartesia} unit="ms" />
             
             <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-baseline">
               <span className="text-sm uppercase tracking-widest text-white/80">Total RTT</span>
