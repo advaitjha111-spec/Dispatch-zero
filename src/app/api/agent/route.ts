@@ -71,7 +71,7 @@ ${context}
         { role: 'system', content: systemPrompt },
         { role: 'user', content: transcript }
       ],
-      model: 'llama3-8b-8192',
+      model: 'llama-3.1-8b-instant',
       stream: true,
       max_tokens: 150,
       temperature: 0.1,
