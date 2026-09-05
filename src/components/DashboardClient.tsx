@@ -234,11 +234,11 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
     <div className="h-screen w-full bg-true-black text-offwhite overflow-hidden p-4 font-sans select-none flex flex-col gap-4 cursor-none relative">
       {/* Glow Cursor */}
       <motion.div
-        className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center mix-blend-screen"
+        className="pointer-events-none fixed top-0 left-0 z-50 flex items-center justify-center mix-blend-screen w-8 h-8"
         animate={{ x: mousePos.x - 16, y: mousePos.y - 16 }}
         transition={{ type: "tween", ease: "linear", duration: 0 }}
       >
-        <div className="w-8 h-8 rounded-full border border-neon-cyan/50 shadow-[0_0_15px_rgba(0,240,255,0.8)]" />
+        <div className="absolute inset-0 rounded-full border border-neon-cyan/50 shadow-[0_0_15px_rgba(0,240,255,0.8)]" />
         <div className="absolute w-1 h-1 bg-neon-cyan rounded-full shadow-[0_0_5px_rgba(0,240,255,1)]" />
       </motion.div>
 
