@@ -162,9 +162,15 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
             const audioCtx = audioContextRef.current;
             if (!audioCtx) continue;
             
-            // Float32Array PCM audio chunk
-            const buffer = audioCtx.createBuffer(1, event.audio.length, 44100);
-            buffer.getChannelData(0).set(event.audio);
+            // event.audio is a Uint8Array of pcm_f32le bytes. Convert it to Float32Array.
+            const floats = new Float32Array(
+              event.audio.buffer,
+              event.audio.byteOffset,
+              event.audio.byteLength / 4
+            );
+
+            const buffer = audioCtx.createBuffer(1, floats.length, 44100);
+            buffer.getChannelData(0).set(floats);
             
             const source = audioCtx.createBufferSource();
             source.buffer = buffer;
