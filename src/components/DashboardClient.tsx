@@ -150,23 +150,23 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       let firstTokenTime = 0;
       
       const receiveAudio = async () => {
-        for await (const event of cartesiaWsRef.current.receive()) {
+        for await (const event of ctx.receive()) {
           if (event.type === 'chunk' && event.audio) {
-            const ctx = audioContextRef.current;
-            if (!ctx) continue;
+            const audioCtx = audioContextRef.current;
+            if (!audioCtx) continue;
             
             // Float32Array PCM audio chunk
-            const buffer = ctx.createBuffer(1, event.audio.length, 44100);
+            const buffer = audioCtx.createBuffer(1, event.audio.length, 44100);
             buffer.getChannelData(0).set(event.audio);
             
-            const source = ctx.createBufferSource();
+            const source = audioCtx.createBufferSource();
             source.buffer = buffer;
-            source.connect(ctx.destination);
+            source.connect(audioCtx.destination);
             if (destNodeRef.current) {
               source.connect(destNodeRef.current);
             }
             
-            const playTime = Math.max(ctx.currentTime, nextPlayTimeRef.current);
+            const playTime = Math.max(audioCtx.currentTime, nextPlayTimeRef.current);
             source.start(playTime);
             nextPlayTimeRef.current = playTime + buffer.duration;
           }
