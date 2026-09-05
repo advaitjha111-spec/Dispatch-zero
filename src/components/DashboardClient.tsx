@@ -188,10 +188,14 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       
       receiveAudio(); // run in background
       
+      let hasPushedTokens = false;
+
       while (true) {
         const { value, done } = await reader.read();
         if (done) {
-          await ctx.no_more_inputs();
+          if (hasPushedTokens) {
+            await ctx.no_more_inputs();
+          }
           break;
         }
         
@@ -211,7 +215,11 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
                  setMetrics(m => ({ ...m, llm: Math.round(firstTokenTime - t0) }));
               }
               llmText += data.content;
-              await ctx.push({ transcript: data.content });
+              const contentToPush = data.content;
+              if (contentToPush.trim().length > 0) {
+                hasPushedTokens = true;
+                await ctx.push({ transcript: contentToPush });
+              }
             }
           } catch(e) {}
         }
