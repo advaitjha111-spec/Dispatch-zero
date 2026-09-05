@@ -2,60 +2,52 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import Groq from 'groq-sdk';
+import { MossClient } from '@moss-dev/moss';
 
 // Initialize Groq
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Mock Moss SDK for the hackathon local retrieval
-class MossSDK {
-  private dataPath: string;
-  constructor(config: { projectId?: string; projectKey?: string }) {
-    this.dataPath = path.join(process.cwd(), 'data', 'ems_protocols.txt');
-  }
-  async query(text: string): Promise<{ context: string; latencyMs: number }> {
-    const start = performance.now();
-    let context = "";
-    try {
-      const fileContent = fs.readFileSync(this.dataPath, 'utf-8');
-      
-      // Simple semantic mock: search for keywords
-      const lowerText = text.toLowerCase();
-      const blocks = fileContent.split('\n\n');
-      
-      for (const block of blocks) {
-        if (
-          (lowerText.includes('ammonia') && block.includes('ANHYDROUS AMMONIA')) ||
-          (lowerText.includes('spill') && block.includes('FLAMMABLE LIQUIDS')) ||
-          (lowerText.includes('heart') && block.includes('CARDIAC ARREST')) ||
-          (lowerText.includes('cardiac') && block.includes('CARDIAC ARREST')) ||
-          (lowerText.includes('fire') && block.includes('FLAMMABLE'))
-        ) {
-          context = block;
-          break;
-        }
-      }
-      if (!context) context = blocks[0]; // fallback
-    } catch (e) {
-      context = "PROTOCOL ID: UNKNOWN\nFollow standard emergency dispatch procedures.";
-    }
-    
-    const end = performance.now();
-    // Enforce <10ms latency as per requirements
-    return { context, latencyMs: Math.min(end - start, 9.99) };
-  }
-}
+// Initialize Moss Client
+const mossClient = new MossClient(
+  process.env.MOSS_PROJECT_ID as string,
+  process.env.MOSS_PROJECT_KEY as string
+);
 
-const moss = new MossSDK({
-  projectId: process.env.MOSS_PROJECT_ID,
-  projectKey: process.env.MOSS_PROJECT_KEY
-});
+const INDEX_NAME = "ems-protocols";
+let isMossLoaded = false;
+
+async function getMossContext(query: string): Promise<{ context: string; latencyMs: number }> {
+  // Ensure the index is created and loaded into local memory for sub-10ms retrieval
+  if (!isMossLoaded) {
+    const dataPath = path.join(process.cwd(), 'data', 'ems_protocols.txt');
+    const fileContent = fs.readFileSync(dataPath, 'utf-8');
+    const blocks = fileContent.split('\n\n').filter(b => b.trim().length > 0);
+    const docs = blocks.map((text, i) => ({ id: `protocol-${i}`, text }));
+    
+    // Create cloud index
+    await mossClient.createIndex(INDEX_NAME, docs);
+    // Load into local memory for lightning-fast local queries
+    await mossClient.loadIndex(INDEX_NAME);
+    isMossLoaded = true;
+  }
+
+  const start = performance.now();
+  const results = await mossClient.query(INDEX_NAME, query, { topK: 1 });
+  const end = performance.now();
+  
+  const context = results.docs && results.docs.length > 0 
+    ? results.docs[0].text 
+    : "PROTOCOL ID: UNKNOWN\nFollow standard emergency dispatch procedures.";
+
+  return { context, latencyMs: end - start };
+}
 
 export async function POST(req: Request) {
   try {
     const { transcript } = await req.json();
 
-    // 1. Moss Retrieval
-    const { context, latencyMs } = await moss.query(transcript);
+    // 1. Moss Retrieval (Real implementation)
+    const { context, latencyMs } = await getMossContext(transcript);
 
     // 2. Groq LLM Inference (Streaming)
     const systemPrompt = `You are DispatchZero, an elite AI emergency dispatcher. 
