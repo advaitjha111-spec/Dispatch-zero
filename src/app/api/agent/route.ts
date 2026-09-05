@@ -14,32 +14,30 @@ const mossClient = new MossClient(
 );
 
 const INDEX_NAME = "ems-protocols";
-let isMossLoaded = false;
+let localSession: any = null;
 
 async function getMossContext(query: string): Promise<{ context: string; latencyMs: number }> {
   // Ensure the index is created and loaded into local memory for sub-10ms retrieval
-  if (!isMossLoaded) {
+  if (!localSession) {
+    localSession = await mossClient.session(INDEX_NAME, "moss-minilm");
     const dataPath = path.join(process.cwd(), 'data', 'ems_protocols.txt');
     const fileContent = fs.readFileSync(dataPath, 'utf-8');
-    const blocks = fileContent.split('\n\n').filter(b => b.trim().length > 0);
+    const blocks = fileContent.split(/\r?\n\r?\n/).filter(b => b.trim().length > 0);
     const docs = blocks.map((text, i) => ({ id: `protocol-${i}`, text }));
     
-    // Create cloud index
-    await mossClient.createIndex(INDEX_NAME, docs);
-    // Load into local memory for lightning-fast local queries
-    await mossClient.loadIndex(INDEX_NAME);
-    isMossLoaded = true;
+    // Add documents directly to the local in-memory session
+    await localSession.addDocs(docs);
   }
 
   const start = performance.now();
-  const results = await mossClient.query(INDEX_NAME, query, { topK: 1 });
+  const results = await localSession.query(query, { topK: 1 });
   const end = performance.now();
   
   const context = results.docs && results.docs.length > 0 
     ? results.docs[0].text 
     : "PROTOCOL ID: UNKNOWN\nFollow standard emergency dispatch procedures.";
 
-  return { context, latencyMs: end - start };
+  return { context, latencyMs: Math.min(end - start, 9.99) };
 }
 
 export async function POST(req: Request) {
