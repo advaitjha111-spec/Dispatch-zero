@@ -83,8 +83,8 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
 
       const deepgram = new DeepgramClient({ apiKey: deepgramKey });
       const socket = await deepgram.listen.v1.connect({ 
-        model: "nova-3", 
-        language: "en", 
+        model: "nova-2", 
+        detect_language: "true", 
         smart_format: "true",
         endpointing: "300"
       });
@@ -152,7 +152,7 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       isAgentSpeaking.current = true;
       
       const ctx = cartesiaWsRef.current.context({
-        model_id: "sonic-latest",
+        model_id: "sonic-multilingual",
         voice: { mode: "id", id: "a0e99841-438c-4a64-b679-ae501e7d6091" },
         output_format: { container: "raw", encoding: "pcm_f32le", sample_rate: 44100 }
       });
