@@ -102,6 +102,7 @@ ${context}
     });
 
   } catch (error: any) {
+    console.error("API Agent Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

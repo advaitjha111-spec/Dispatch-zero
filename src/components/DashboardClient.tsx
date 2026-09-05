@@ -97,7 +97,9 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
           }
         });
         
-        mediaRecorderRef.current.start(250); // capture 250ms chunks
+        if (mediaRecorderRef.current.state === "inactive") {
+          mediaRecorderRef.current.start(250); // capture 250ms chunks
+        }
       });
 
       socket.on("message", async (data: any) => {
@@ -134,7 +136,10 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ transcript: text })
       });
-      
+      if (!res.ok) {
+        console.error("Agent API failed:", await res.text());
+        return;
+      }
       if (!res.body) return;
 
       const reader = res.body.getReader();
@@ -143,7 +148,7 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       isAgentSpeaking.current = true;
       
       const ctx = cartesiaWsRef.current.context({
-        model_id: "sonic-english",
+        model_id: "sonic-latest",
         voice: { mode: "id", id: "a0e99841-438c-4a64-b679-ae501e7d6091" },
         output_format: { container: "raw", encoding: "pcm_f32le", sample_rate: 44100 }
       });
@@ -185,7 +190,7 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
         }
         
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\\n').filter(Boolean);
+        const lines = chunk.split('\n').filter(Boolean);
         
         for (const line of lines) {
           try {
