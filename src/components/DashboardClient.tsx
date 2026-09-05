@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { Mic, Activity, Server, Zap, Search } from "lucide-react";
 import { DeepgramClient } from "@deepgram/sdk";
 import Cartesia from "@cartesia/cartesia-js";
+import { Room, LocalAudioTrack } from "livekit-client";
 
 export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgramKey: string, cartesiaKey: string }) {
   const [isActive, setIsActive] = useState(false);
@@ -24,6 +25,8 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
   const cartesiaClientRef = useRef<any>(null);
   const cartesiaWsRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const destNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
+  const livekitRoomRef = useRef<Room | null>(null);
   const nextPlayTimeRef = useRef<number>(0);
   const isAgentSpeaking = useRef(false);
 
@@ -35,8 +38,25 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 44100 });
       nextPlayTimeRef.current = audioContextRef.current.currentTime;
       
-      // 2. Setup Deepgram
+      // 2. Setup LiveKit WebRTC
+      const lkRes = await fetch("/api/livekit/token?room=dispatch-zero&username=agent");
+      const { token } = await lkRes.json();
+      const room = new Room();
+      await room.connect(process.env.NEXT_PUBLIC_LIVEKIT_URL!, token);
+      livekitRoomRef.current = room;
+
+      // Create WebAudio Destination for Cartesia TTS
+      destNodeRef.current = audioContextRef.current.createMediaStreamDestination();
+      const agentTrack = new LocalAudioTrack(destNodeRef.current.stream.getAudioTracks()[0]);
+      await room.localParticipant.publishTrack(agentTrack, { name: 'agent-tts' });
+
+      // 3. Setup Deepgram
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Publish User Mic to LiveKit
+      const userTrack = new LocalAudioTrack(stream.getAudioTracks()[0]);
+      await room.localParticipant.publishTrack(userTrack, { name: 'user-mic' });
+
       const deepgram = new DeepgramClient({ apiKey: deepgramKey });
       const socket = await deepgram.listen.v1.connect({ 
         model: "nova-3", 
@@ -121,6 +141,9 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
             const source = ctx.createBufferSource();
             source.buffer = buffer;
             source.connect(ctx.destination);
+            if (destNodeRef.current) {
+              source.connect(destNodeRef.current);
+            }
             
             const playTime = Math.max(ctx.currentTime, nextPlayTimeRef.current);
             source.start(playTime);
