@@ -71,7 +71,7 @@ ${context}
         { role: 'system', content: systemPrompt },
         { role: 'user', content: transcript }
       ],
-      model: 'llama-3.1-8b-instant',
+      model: 'groq/compound-mini',
       stream: true,
       max_tokens: 150,
       temperature: 0.1,
