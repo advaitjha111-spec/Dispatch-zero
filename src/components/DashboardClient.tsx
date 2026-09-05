@@ -98,9 +98,9 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       const deepgram = new DeepgramClient({ apiKey: deepgramKey });
       const socket = await deepgram.listen.v1.connect({ 
         model: "nova-2", 
-        detect_language: true, 
+        language: "hi", 
         smart_format: true,
-        endpointing: "300"
+        endpointing: 300
       });
       deepgramSocketRef.current = socket;
 
