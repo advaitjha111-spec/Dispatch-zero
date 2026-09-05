@@ -39,10 +39,24 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
 
   const startPipeline = async () => {
     try {
+      // Disconnect any existing sessions
+      if (livekitRoomRef.current) {
+        try { livekitRoomRef.current.disconnect(); } catch (e) {}
+      }
+      if (deepgramSocketRef.current) {
+        try { deepgramSocketRef.current.finish(); } catch (e) {}
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try { mediaRecorderRef.current.stop(); } catch (e) {}
+      }
+
       // 1. Setup Cartesia
       cartesiaClientRef.current = new Cartesia({ apiKey: cartesiaKey });
       cartesiaWsRef.current = await cartesiaClientRef.current.tts.websocket();
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 44100 });
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
       nextPlayTimeRef.current = audioContextRef.current.currentTime;
       
       // 2. Setup LiveKit WebRTC
@@ -92,7 +106,22 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
 
       socket.on("open", () => {
         setIsActive(true);
-        mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        
+        let recorderMimeType: string | undefined = undefined;
+        if (typeof MediaRecorder !== 'undefined') {
+          const types = [
+            'audio/webm;codecs=opus',
+            'audio/webm',
+            'audio/ogg;codecs=opus',
+            'audio/mp4',
+            'audio/aac'
+          ];
+          recorderMimeType = types.find(t => MediaRecorder.isTypeSupported(t));
+        }
+
+        mediaRecorderRef.current = recorderMimeType 
+          ? new MediaRecorder(stream, { mimeType: recorderMimeType })
+          : new MediaRecorder(stream);
         
         mediaRecorderRef.current.addEventListener('dataavailable', event => {
           if (event.data.size > 0 && socket.readyState === 1) {
