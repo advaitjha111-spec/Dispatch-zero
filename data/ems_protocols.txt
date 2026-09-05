@@ -32,3 +32,148 @@ IMMEDIATE ACTIONS:
 3. Instruct the bystander to begin chest compressions immediately: Push hard and fast in the center of the chest (100 to 120 compressions per minute).
 4. Depth of compressions should be at least 2 inches (5 cm).
 5. Do not stop compressions to check for a pulse. Continue until the ALS unit arrives or an AED is ready to analyze.
+
+PROTOCOL ID: DOT-ERG-111
+HAZMAT: MIXED CHEMICAL SPILLS - GENERAL
+SCENARIO: UNKNOWN HAZARDOUS MATERIAL RELEASE
+IMMEDIATE ACTIONS:
+1. Isolate spill or leak area immediately for at least 50 meters in all directions.
+2. Deny entry to unauthorized personnel and call specialized hazmat teams.
+3. Stay clear of vapors, smoke, and associated runoff.
+
+PROTOCOL ID: DOT-ERG-112
+HAZMAT: EXPLOSIVES - DIVISION 1.1 / 1.2
+SCENARIO: EXPLOSIVE DEVICE OR CARGO FIRE
+IMMEDIATE ACTIONS:
+1. Evacuate all personnel for 800 meters (1/2 mile) in all directions if fire involves cargo.
+2. Do not fight fire when it reaches explosives.
+3. Isolate the danger zone and set up road blocks immediately.
+
+PROTOCOL ID: DOT-ERG-127
+HAZMAT: FLAMMABLE LIQUIDS (POLAR / WATER-MISCIBLE)
+SCENARIO: ALCOHOL OR SOLVENT SPILL FIRE
+IMMEDIATE ACTIONS:
+1. Isolate spill area for at least 50 meters.
+2. Use alcohol-resistant foam, carbon dioxide, or dry chemical for small fires.
+3. Prevent runoff from entering drains or water systems.
+
+PROTOCOL ID: DOT-ERG-135
+HAZMAT: SUBSTANCES - SPONTANEOUSLY COMBUSTIBLE
+SCENARIO: PYROPHORIC METAL OR CHEMICAL REACTIVE FIRE
+IMMEDIATE ACTIONS:
+1. Do not use water directly on burning material.
+2. Use dry sand, limestone powder, or dry graphite to smother flames.
+3. Isolate area for at least 100 meters.
+
+PROTOCOL ID: DOT-ERG-153
+HAZMAT: TOXIC AND/OR CORROSIVE SUBSTANCES (COMBUSTIBLE)
+SCENARIO: ACID OR CAUSTIC LEAK WITH FIRE RISK
+IMMEDIATE ACTIONS:
+1. Wear full protective gear with positive-pressure SCBA.
+2. Stop leak if safe to do so without environmental exposure.
+3. Neutralize liquid carefully with lime or soda ash if authorized.
+
+PROTOCOL ID: EMS-CPR-01
+SCENARIO: ADULT CARDIAC ARREST
+IMMEDIATE ACTIONS:
+1. Confirm unresponsiveness and absence of normal breathing.
+2. Initiate continuous chest compressions at 100-120 bpm, depth at least 2 inches.
+3. Apply AED immediately when available and follow audio prompts.
+
+PROTOCOL ID: EMS-CPR-02
+SCENARIO: PEDIATRIC CARDIAC ARREST (INFANT)
+IMMEDIATE ACTIONS:
+1. Deliver 15 chest compressions followed by 2 rescue breaths if trained.
+2. Use two fingers for single rescuer; compress one-third the depth of the chest (approx 1.5 inches).
+3. Call for advanced pediatric life support transport.
+
+PROTOCOL ID: EMS-AIRWAY-01
+SCENARIO: SEVERE AIRWAY OBSTRUCTION / CHOKING (CONSCIOUS ADULT)
+IMMEDIATE ACTIONS:
+1. Stand behind the patient and wrap arms around the waist.
+2. Perform abdominal thrusts (Heimlich maneuver) inward and upward.
+3. Continue until object is expelled or patient becomes unconscious.
+
+PROTOCOL ID: EMS-TRAUMA-01
+SCENARIO: MASSIVE HEMORRHAGE / SEVERE BLEEDING
+IMMEDIATE ACTIONS:
+1. Apply direct manual pressure with sterile gauze to the wound site.
+2. If bleeding persists on an extremity, apply a tourniquet 2-3 inches above the wound.
+3. Note the exact time the tourniquet was applied and secure it tightly.
+
+PROTOCOL ID: EMS-TRAUMA-02
+SCENARIO: SUSPECTED CERVICAL SPINE INJURY
+IMMEDIATE ACTIONS:
+1. Maintain manual in-line stabilization of the head and neck immediately.
+2. Apply a rigid cervical collar of appropriate size.
+3. Secure the patient onto a backboard with head blocks and straps.
+
+PROTOCOL ID: EMS-MED-01
+SCENARIO: ANAPHYLACTIC SHOCK / SEVERE ALLERGIC REACTION
+IMMEDIATE ACTIONS:
+1. Administer Epinephrine (0.3mg intramuscular) into the lateral thigh immediately.
+2. Maintain airway patency and administer high-flow oxygen via non-rebreather mask.
+3. Monitor vital signs every 5 minutes for signs of cardiovascular collapse.
+
+PROTOCOL ID: EMS-MED-02
+SCENARIO: ACUTE ASTHMA EXACERBATION / BRONCHOSPASM
+IMMEDIATE ACTIONS:
+1. Administer Albuterol via nebulizer or metered-dose inhaler.
+2. Position patient upright in a position of comfort to maximize lung expansion.
+3. Re-evaluate respiratory rate and oxygen saturation after 5 minutes.
+
+PROTOCOL ID: EMS-MED-03
+SCENARIO: SUSPECTED STROKE / CEREBROVASCULAR ACCIDENT
+IMMEDIATE ACTIONS:
+1. Perform FAST assessment (Face drooping, Arm drift, Speech slurred, Time to call).
+2. Record exact time of symptom onset or last known normal state.
+3. Keep patient NPO (nothing by mouth) and transport to a stroke-certified center.
+
+PROTOCOL ID: EMS-MED-04
+SCENARIO: DIABETIC HYPOGLYCEMIA (LOW BLOOD GLUCOSE)
+IMMEDIATE ACTIONS:
+1. Administer oral glucose gel or fast-acting carbohydrates if conscious and able to swallow.
+2. If unconscious or unable to protect airway, administer Glucagon IM or establish IV dextrose.
+3. Re-check blood glucose levels after 10 minutes.
+
+PROTOCOL ID: EMS-MED-05
+SCENARIO: GENERALIZED TONIC-CLONIC SEIZURE
+IMMEDIATE ACTIONS:
+1. Clear surrounding area of hard or sharp objects to prevent physical injury.
+2. Do not insert any objects into the patient's mouth or restrain limbs.
+3. Place patient in recovery position post-seizure and administer oxygen.
+
+PROTOCOL ID: EMS-ENV-01
+SCENARIO: HEAT STROKE / HYPERTHERMIA
+IMMEDIATE ACTIONS:
+1. Move patient immediately to a shaded or air-conditioned environment.
+2. Remove excess clothing and apply active cooling (ice packs to groin, axillae, neck, cold water immersion).
+3. Monitor core temperature and prepare for rapid fluid resuscitation.
+
+PROTOCOL ID: EMS-ENV-02
+SCENARIO: HYPOTHERMIA / SYSTEMIC COLD EXPOSURE
+IMMEDIATE ACTIONS:
+1. Handle patient extremely gently to avoid triggering ventricular fibrillation.
+2. Remove wet clothing and wrap in warm, dry blankets.
+3. Apply passive external warming; avoid active rapid external warming of extremities.
+
+PROTOCOL ID: EMS-TOX-01
+SCENARIO: OPIOID OVERDOSE / RESPIRATORY DEPRESSION
+IMMEDIATE ACTIONS:
+1. Support ventilation with bag-valve-mask (BVM) and supplemental oxygen.
+2. Administer Naloxone (Narcan) intranasally (2mg to 4mg) or intramuscularly.
+3. Prepare to repeat dose if no respiratory response within 3 to 5 minutes.
+
+PROTOCOL ID: EMS-TOX-02
+SCENARIO: CARBON MONOXIDE POISONING
+IMMEDIATE ACTIONS:
+1. Immediately evacuate patient to fresh air environment.
+2. Administer 100% oxygen via a non-rebreather mask with a tight seal.
+3. Monitor carboxyhemoglobin levels and transport for hyperbaric evaluation if indicated.
+
+PROTOCOL ID: EMS-OB-01
+SCENARIO: EMERGENCY CHILDBIRTH / PRECIPITOUS DELIVERY
+IMMEDIATE ACTIONS:
+1. Position mother on her back with knees bent and legs apart on a clean surface.
+2. Support baby's head gently as it crowns; do not pull or tug on the infant.
+3. Check for umbilical cord wrapped around the neck; gently slip it over the head if present.

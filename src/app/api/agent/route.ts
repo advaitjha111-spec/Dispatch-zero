@@ -48,13 +48,7 @@ export async function POST(req: Request) {
     const { context, latencyMs } = await getMossContext(transcript);
 
     // 2. Groq LLM Inference (Streaming)
-    const systemPrompt = `You are DispatchZero, an elite AI emergency dispatcher. 
-Be highly concise, tactical, and direct. Use the following retrieved protocol strictly to advise the user.
-Do not hallucinate. Speak in short, punchy sentences suitable for an urgent TTS engine.
-
-[RETRIEVED PROTOCOL]
-${context}
-`;
+    const systemPrompt = `You are DispatchZero AI. You guide emergency callers using the following Moss protocol context:\n\n${context}\n\nStrictly detect and mirror the user's spoken language. If they speak Hindi, respond completely in Hindi while retaining exact technical actions. Respond with short, immediate, actionable spoken directives. Do not use markdown.`;
 
     const stream = await groq.chat.completions.create({
       messages: [
