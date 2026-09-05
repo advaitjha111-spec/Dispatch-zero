@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-obsidian: #0A0A0A;
+  --color-true-black: #000000;
+  --color-offwhite: #EDEDED;
+  --color-neon-cyan: #00F0FF;
+  --color-pulse-red: #FF3B30;
+  --color-emerald-green: #00FF66;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+body {
+  background-color: var(--color-obsidian);
+  color: var(--color-offwhite);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
