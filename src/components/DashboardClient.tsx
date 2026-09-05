@@ -22,12 +22,18 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const deepgramSocketRef = useRef<any>(null);
   const cartesiaClientRef = useRef<any>(null);
+  const cartesiaWsRef = useRef<any>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const nextPlayTimeRef = useRef<number>(0);
   const isAgentSpeaking = useRef(false);
 
   const startPipeline = async () => {
     try {
       // 1. Setup Cartesia
       cartesiaClientRef.current = new Cartesia({ apiKey: cartesiaKey });
+      cartesiaWsRef.current = await cartesiaClientRef.current.tts.websocket();
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 44100 });
+      nextPlayTimeRef.current = audioContextRef.current.currentTime;
       
       // 2. Setup Deepgram
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -93,22 +99,46 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
       let llmText = "";
       isAgentSpeaking.current = true;
       
-      const cartesiaSocket = cartesiaClientRef.current.tts.websocket({
+      const ctx = cartesiaWsRef.current.context({
         model_id: "sonic-english",
-        voice: { mode: "id", id: "a0e99841-438c-4a64-b679-ae501e7d6091" }, // Default Voice
-        sample_rate: 24000
+        voice: { mode: "id", id: "a0e99841-438c-4a64-b679-ae501e7d6091" },
+        output_format: { container: "raw", encoding: "pcm_f32le", sample_rate: 44100 }
       });
       
       let tMoss = 0;
       let firstTokenTime = 0;
       
-      // We will buffer text and send to Cartesia
-      // In a true streaming setup we'd pipe the reader directly to Cartesia SDK's streaming input
+      const receiveAudio = async () => {
+        for await (const event of cartesiaWsRef.current.receive()) {
+          if (event.type === 'chunk' && event.audio) {
+            const ctx = audioContextRef.current;
+            if (!ctx) continue;
+            
+            // Float32Array PCM audio chunk
+            const buffer = ctx.createBuffer(1, event.audio.length, 44100);
+            buffer.getChannelData(0).set(event.audio);
+            
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            
+            const playTime = Math.max(ctx.currentTime, nextPlayTimeRef.current);
+            source.start(playTime);
+            nextPlayTimeRef.current = playTime + buffer.duration;
+          }
+        }
+      };
+      
+      receiveAudio(); // run in background
       
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
+        if (done) {
+          await ctx.no_more_inputs();
+          break;
+        }
+        
+        const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\\n').filter(Boolean);
         
         for (const line of lines) {
@@ -124,18 +154,17 @@ export default function DashboardClient({ deepgramKey, cartesiaKey }: { deepgram
                  setMetrics(m => ({ ...m, llm: Math.round(firstTokenTime - t0) }));
               }
               llmText += data.content;
+              await ctx.push({ transcript: data.content });
             }
           } catch(e) {}
         }
       }
       
-      // Calculate Total RTT (STT + Moss + LLM + Cartesia TTS mock buffering)
-      setMetrics(m => ({ ...m, total: Math.round(sttTime + tMoss + (performance.now() - t0) + 120) })); // 120ms TTS buffer approx
+      // Calculate Total RTT
+      setMetrics(m => ({ ...m, total: Math.round(sttTime + tMoss + (firstTokenTime - t0) + 120) })); 
 
       setTranscript(prev => [...prev, { role: "agent", text: llmText }]);
       isAgentSpeaking.current = false;
-      
-      // In full implementation, Cartesia TTS audio chunks are played here
       
     } catch(err) {
       console.error(err);
