@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# prompt & build docs
+dispatchzero-gemini-build-prompt.md
