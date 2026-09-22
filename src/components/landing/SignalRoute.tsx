@@ -1,6 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
+
+function subscribeReducedMotion(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+  mediaQuery.addEventListener("change", callback);
+  return () => mediaQuery.removeEventListener("change", callback);
+}
+
+function getReducedMotionSnapshot() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function getReducedMotionServerSnapshot() {
+  return false;
+}
 
 interface NodeItem {
   id: string;
@@ -49,21 +65,12 @@ const NODES: NodeItem[] = [
 export default function SignalRoute() {
   const [activeNodeIndex, setActiveNodeIndex] = useState<number>(0);
   const [isAutoCycling, setIsAutoCycling] = useState<boolean>(true);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
+  const prefersReducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotionSnapshot,
+    getReducedMotionServerSnapshot
+  );
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Detect accessibility preference for reduced motion
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
 
   // Automatic shifting animation: advances through nodes sequentially (disabled if reduced motion requested)
   useEffect(() => {

@@ -142,8 +142,9 @@ CRITICAL LANGUAGE REQUIREMENT:
               max_tokens: 150,
               temperature: 0.1,
             });
-          } catch (modelErr: any) {
-            if (modelErr?.status === 404 || modelErr?.code === 'model_not_found' || modelErr?.message?.includes('does not exist')) {
+          } catch (modelErr: unknown) {
+            const err = modelErr as { status?: number; code?: string; message?: string } | undefined;
+            if (err?.status === 404 || err?.code === 'model_not_found' || err?.message?.includes('does not exist')) {
               console.warn(`Notice: ${primaryModel} not available, falling back to qwen/qwen3.8-27b`);
               stream = await groq.chat.completions.create({
                 messages: [

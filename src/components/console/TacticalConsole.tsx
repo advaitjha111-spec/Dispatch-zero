@@ -250,8 +250,6 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
       const t0 = performance.now();
       let mossTime = 8.2;
       let firstTokenTime = 0;
-      let cartesiaFirstByteTime = 0;
-      let pushTime = 0;
 
       try {
         // 2. Call real backend API
@@ -399,7 +397,7 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
         }
       }
     },
-    [elapsedSeconds, isOverrideActive, speakVerbalReply]
+    [elapsedSeconds, isOverrideActive, speakVerbalReply, sessionConfig.hasCartesia]
   );
 
   // Stop Live Microphone and all WebSocket pipelines
