@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "./landing/Navbar";
 import HeroSection from "./landing/HeroSection";
 import MetricsBanner from "./landing/MetricsBanner";
@@ -10,28 +10,23 @@ import ArchitectureComparison from "./landing/ArchitectureComparison";
 import PipelineSection from "./landing/PipelineSection";
 import CTASection from "./landing/CTASection";
 import Footer from "./landing/Footer";
-import TacticalConsole from "./console/TacticalConsole";
 
 export default function MainLayout() {
-  const [showConsole, setShowConsole] = useState(false);
+  const router = useRouter();
 
-  if (showConsole) {
-    return (
-      <TacticalConsole
-        onBack={() => setShowConsole(false)}
-      />
-    );
-  }
+  const handleLaunchConsole = () => {
+    router.push("/console");
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-[#040914] text-[#F4F2EA]">
       {/* Top Fixed Navigation */}
-      <Navbar onLaunchConsole={() => setShowConsole(true)} />
+      <Navbar onLaunchConsole={handleLaunchConsole} />
 
       {/* Main Landing Flow */}
       <main className="flex-1 flex flex-col">
         {/* 1. Hero & Signal Route */}
-        <HeroSection onLaunchConsole={() => setShowConsole(true)} />
+        <HeroSection onLaunchConsole={handleLaunchConsole} />
         
         {/* 2. Four Proof Metrics */}
         <MetricsBanner />
@@ -49,7 +44,7 @@ export default function MainLayout() {
         <PipelineSection />
         
         {/* 7. CTA Section */}
-        <CTASection onLaunchConsole={() => setShowConsole(true)} />
+        <CTASection onLaunchConsole={handleLaunchConsole} />
       </main>
 
       {/* Technical Footer */}

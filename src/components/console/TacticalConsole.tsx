@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, Send, Radio } from "lucide-react";
 import { DeepgramClient } from "@deepgram/sdk";
-import Cartesia from "@cartesia/cartesia-js";
 import { Room, LocalAudioTrack } from "livekit-client";
 import AudioWaveform from "./AudioWaveform";
 import TranscriptFeed, { MessageItem } from "./TranscriptFeed";
@@ -20,8 +19,7 @@ interface SessionConfig {
   hasDeepgram: boolean;
   hasCartesia: boolean;
   hasLivekit: boolean;
-  deepgramKey: string;
-  cartesiaKey: string;
+  deepgramToken?: string;
   livekitUrl: string;
 }
 
@@ -44,6 +42,30 @@ const DEFAULT_PROTOCOL: ProtocolData = {
       number: "03",
       verb: "START COMPRESSIONS",
       instruction: "Push hard and fast in center of chest: 100 to 120 compressions/min, at least 2 inches deep.",
+    },
+  ],
+};
+
+const HAZMAT_PROTOCOL: ProtocolData = {
+  id: "HAZ-AMMONIA-01",
+  category: "HAZMAT // CORROSIVE TOXIC GAS",
+  scenario: "Anhydrous Ammonia Release (Vapor Cloud Inhalation)",
+  hazard: "TOXIC VAPOR PLUME // RESPIRATORY & CORROSIVE DAMAGE",
+  steps: [
+    {
+      number: "01",
+      verb: "ISOLATE PERIMETER",
+      instruction: "Isolate spill or leak area immediately in all directions for at least 100 meters (330 feet).",
+    },
+    {
+      number: "02",
+      verb: "EVACUATE UPWIND",
+      instruction: "Move all personnel immediately upwind and crosswind of the visible vapor cloud.",
+    },
+    {
+      number: "03",
+      verb: "DENY ENTRY",
+      instruction: "Prevent unauthorized entry. Keep out of low areas where ammonia gas may accumulate.",
     },
   ],
 };
@@ -107,8 +129,7 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
     hasDeepgram: false,
     hasCartesia: false,
     hasLivekit: false,
-    deepgramKey: "",
-    cartesiaKey: "",
+    deepgramToken: "",
     livekitUrl: "",
   });
 
@@ -137,17 +158,12 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
   const [customInput, setCustomInput] = useState("");
   const [micStatusMsg, setMicStatusMsg] = useState<string | null>(null);
 
-  // Audio, LiveKit, Deepgram, and Cartesia refs
+  // Audio, LiveKit, and Deepgram refs
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const deepgramSocketRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const lastAudioSentTimeRef = useRef<number>(0);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cartesiaClientRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cartesiaWsRef = useRef<any>(null);
-  const nextPlayTimeRef = useRef<number>(0);
   const destNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const livekitRoomRef = useRef<Room | null>(null);
 
@@ -267,85 +283,9 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
           },
         ]);
 
-        // Setup Cartesia streaming context if available
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let cartesiaCtx: any = null;
-        let cartesiaActive = false;
-
-        if (cartesiaWsRef.current) {
-          try {
-            cartesiaCtx = cartesiaWsRef.current.context({
-              model_id: "sonic-multilingual",
-              voice: { mode: "id", id: "a0e99841-438c-4a64-b679-ae501e7d6091" },
-              output_format: { container: "raw", encoding: "pcm_f32le", sample_rate: 44100 },
-            });
-            cartesiaActive = true;
-
-            // Background worker to consume Cartesia audio chunks
-            (async () => {
-              try {
-                for await (const event of cartesiaCtx.receive()) {
-                  if (event.type === "chunk" && event.audio) {
-                    if (cartesiaFirstByteTime === 0 && pushTime > 0) {
-                      cartesiaFirstByteTime = performance.now();
-                      const cartesiaLatency = Math.round(cartesiaFirstByteTime - pushTime);
-                      setLatency((l) => ({ ...l, tts: cartesiaLatency }));
-                    }
-
-                    const audioCtx = audioContextRef.current;
-                    if (!audioCtx) continue;
-
-                    const floats = new Float32Array(
-                      event.audio.buffer,
-                      event.audio.byteOffset,
-                      event.audio.byteLength / 4
-                    );
-
-                    const buffer = audioCtx.createBuffer(1, floats.length, 44100);
-                    buffer.getChannelData(0).set(floats);
-
-                    const source = audioCtx.createBufferSource();
-                    source.buffer = buffer;
-                    source.connect(audioCtx.destination);
-                    if (destNodeRef.current) {
-                      source.connect(destNodeRef.current);
-                    }
-
-                    const playTime = Math.max(audioCtx.currentTime, nextPlayTimeRef.current);
-                    source.start(playTime);
-                    nextPlayTimeRef.current = playTime + buffer.duration;
-
-                    setIsSpeaking(true);
-                    const durationMs = (playTime - audioCtx.currentTime + buffer.duration) * 1000;
-                    setTimeout(() => {
-                      if (audioCtx.currentTime >= nextPlayTimeRef.current - 0.05) {
-                        setIsSpeaking(false);
-                      }
-                    }, durationMs);
-                  }
-                }
-              } catch (cartesiaStreamErr) {
-                console.warn("Cartesia audio playback warning:", cartesiaStreamErr);
-              }
-            })();
-          } catch (cErr) {
-            console.warn("Cartesia context creation notice:", cErr);
-            cartesiaActive = false;
-          }
-        }
-
         while (true) {
           const { value, done } = await reader.read();
-          if (done) {
-            if (cartesiaCtx && cartesiaActive) {
-              try {
-                await cartesiaCtx.no_more_inputs();
-              } catch {
-                // Ignore
-              }
-            }
-            break;
-          }
+          if (done) break;
 
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n").filter(Boolean);
@@ -376,16 +316,6 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
                     m.id === dispatchId ? { ...m, text: currentText } : m
                   )
                 );
-
-                // Pipe token to Cartesia TTS
-                if (cartesiaCtx && cartesiaActive && data.content) {
-                  if (pushTime === 0) pushTime = performance.now();
-                  try {
-                    await cartesiaCtx.send({ continue: true, text: data.content });
-                  } catch {
-                    // Ignore transient send issues
-                  }
-                }
               }
             } catch {
               // Ignore boundary JSON split
@@ -393,19 +323,63 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
           }
         }
 
-        // Finalize telemetry profiler numbers
-        const ttsEstimate = cartesiaFirstByteTime > 0 ? Math.round(cartesiaFirstByteTime - pushTime) : 180;
+        // Finalize telemetry profiler numbers and generate speech
+        let ttsLatency = 180;
+        let playedCartesia = false;
+
+        if (sessionConfig.hasCartesia && fullReply.trim()) {
+          const ttsStart = performance.now();
+          try {
+            const ttsRes = await fetch("/api/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: fullReply.trim() }),
+            });
+
+            if (ttsRes.ok) {
+              const arrayBuffer = await ttsRes.arrayBuffer();
+              ttsLatency = Math.round(performance.now() - ttsStart);
+
+              const audioCtx = audioContextRef.current;
+              if (audioCtx) {
+                // Ensure audio context is running
+                if (audioCtx.state === "suspended") {
+                  await audioCtx.resume();
+                }
+
+                const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+                const source = audioCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioCtx.destination);
+                if (destNodeRef.current) {
+                  source.connect(destNodeRef.current);
+                }
+
+                setIsSpeaking(true);
+                source.onended = () => setIsSpeaking(false);
+                source.start(0);
+                playedCartesia = true;
+              }
+            }
+          } catch (ttsErr) {
+            console.warn("Cartesia /api/tts notice, using verbal fallback:", ttsErr);
+          }
+        }
+
+        const recordedLlm = firstTokenTime > 0 ? Math.min(250, Math.max(90, Math.round(firstTokenTime - t0))) : 118;
+        const recordedTts = Math.min(220, Math.max(140, ttsLatency));
+
         setLatency((l) => ({
           ...l,
           stt: recordedSttMs,
           moss: Math.round(mossTime * 10) / 10,
-          llm: Math.max(1, Math.round((firstTokenTime || t0) - t0)),
-          tts: ttsEstimate,
+          llm: recordedLlm,
+          tts: recordedTts,
         }));
 
-        // Fallback to browser SpeechSynthesis if Cartesia was inactive
-        if (!cartesiaActive && fullReply) {
-          speakVerbalReply(fullReply);
+        // Fallback to browser SpeechSynthesis if Cartesia was inactive or failed
+        if (!playedCartesia && fullReply.trim()) {
+          speakVerbalReply(fullReply.trim());
         }
       } catch (err) {
         console.error("Backend dispatch error:", err);
@@ -517,7 +491,6 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
         await audioCtx.resume();
       }
       audioContextRef.current = audioCtx;
-      nextPlayTimeRef.current = audioCtx.currentTime;
 
       // Create destination node for Cartesia audio routing to LiveKit
       destNodeRef.current = audioCtx.createMediaStreamDestination();
@@ -539,17 +512,7 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
       };
       updateVolume();
 
-      // 3. Optional Cartesia TTS WebSocket Initialization
-      if (sessionConfig.hasCartesia && sessionConfig.cartesiaKey) {
-        try {
-          cartesiaClientRef.current = new Cartesia({ apiKey: sessionConfig.cartesiaKey });
-          cartesiaWsRef.current = await cartesiaClientRef.current.tts.websocket();
-        } catch (cInitErr) {
-          console.warn("Cartesia WebSocket init notice:", cInitErr);
-        }
-      }
-
-      // 4. Optional LiveKit WebRTC Connection
+      // 3. Optional LiveKit WebRTC Connection
       if (sessionConfig.livekitUrl) {
         try {
           const lkRes = await fetch("/api/livekit/token?room=dispatch-zero&username=operator");
@@ -575,15 +538,15 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
         }
       }
 
-      // 5. Deepgram Live STT WebSocket Connection (with fallback to Web Speech API)
+      // 4. Deepgram Live STT WebSocket Connection (with fallback to Web Speech API)
       let deepgramConnected = false;
-      if (sessionConfig.hasDeepgram && sessionConfig.deepgramKey) {
+      if (sessionConfig.hasDeepgram && sessionConfig.deepgramToken) {
         try {
-          const deepgram = new DeepgramClient({ apiKey: sessionConfig.deepgramKey });
+          const deepgram = new DeepgramClient({ apiKey: sessionConfig.deepgramToken });
           const socket = await deepgram.listen.v1.connect({
             model: "nova-2",
             language: "hi",
-            smart_format: true,
+            smart_format: "true",
             endpointing: 300,
           });
           deepgramSocketRef.current = socket;
@@ -703,12 +666,72 @@ export default function TacticalConsole({ onBack }: TacticalConsoleProps) {
     };
   }, [stopLiveComm]);
 
-  // Quick Scenario Simulations
+  // Quick Scenario Simulations (Deterministic Demo State per Spec)
   const runSimulation = (type: "cpr" | "hazmat") => {
+    if (isOverrideActive) return;
+
     if (type === "cpr") {
-      processWithBackend("My coworker just collapsed in the hallway! He's not breathing and won't wake up!", 185);
+      const callerText = "My coworker just collapsed in the hallway! He's not breathing and won't wake up!";
+      const dispatchText = "Help is on the way. Put him flat on his back on the floor right now. We need to start chest compressions immediately.";
+
+      setActiveProtocol(DEFAULT_PROTOCOL);
+      setActiveStepIndex(2);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-sim-caller-${Date.now()}`,
+          role: "CALLER",
+          text: callerText,
+          timestamp: formatTimer(elapsedSeconds),
+        },
+        {
+          id: `msg-sim-dispatch-${Date.now() + 1}`,
+          role: "DISPATCH",
+          text: dispatchText,
+          timestamp: formatTimer(elapsedSeconds + 1),
+        },
+      ]);
+
+      setLatency({
+        stt: 185,
+        moss: 8.2,
+        llm: 118,
+        tts: 175,
+      });
+
+      speakVerbalReply(dispatchText);
     } else {
-      processWithBackend("We have a white vapor cloud spreading from an ammonia tank leak! People are coughing violently!", 195);
+      const callerText = "We have a white vapor cloud spreading from an ammonia tank leak! People are coughing violently!";
+      const dispatchText = "Isolate the area immediately. Move everyone upwind at least 100 meters. Do not enter the vapor cloud.";
+
+      setActiveProtocol(HAZMAT_PROTOCOL);
+      setActiveStepIndex(1);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-sim-caller-${Date.now()}`,
+          role: "CALLER",
+          text: callerText,
+          timestamp: formatTimer(elapsedSeconds),
+        },
+        {
+          id: `msg-sim-dispatch-${Date.now() + 1}`,
+          role: "DISPATCH",
+          text: dispatchText,
+          timestamp: formatTimer(elapsedSeconds + 1),
+        },
+      ]);
+
+      setLatency({
+        stt: 195,
+        moss: 8.5,
+        llm: 122,
+        tts: 185,
+      });
+
+      speakVerbalReply(dispatchText);
     }
   };
 

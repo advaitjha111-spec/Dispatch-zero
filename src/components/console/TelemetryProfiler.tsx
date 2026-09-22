@@ -46,9 +46,16 @@ export default function TelemetryProfiler({
           >
             {totalRtt > 0 ? `${totalRtt.toFixed(1)}ms` : "--"}
           </div>
-          <div className="flex items-center justify-center gap-2 mt-1.5 font-mono text-[10px] text-[#42E0B2]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#42E0B2]" aria-hidden="true" />
-            <span>TARGET ACHIEVED</span>
+          <div
+            className="flex items-center justify-center gap-2 mt-1.5 font-mono text-[10px]"
+            style={{ color: totalRtt <= 900 ? "#42E0B2" : "#ff765e" }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{ backgroundColor: totalRtt <= 900 ? "#42E0B2" : "#ff765e" }}
+              aria-hidden="true"
+            />
+            <span>{totalRtt <= 900 ? "TARGET ACHIEVED" : "TARGET EXCEEDED"}</span>
             <span className="text-[#93A9C0]">(TARGET &lt; 900MS)</span>
           </div>
         </div>

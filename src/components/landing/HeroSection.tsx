@@ -13,8 +13,42 @@ export default function HeroSection({ onLaunchConsole }: HeroSectionProps) {
       aria-labelledby="hero-heading"
       className="relative pt-28 pb-16 md:pt-40 md:pb-24 overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-        {/* Left Column: Headline and CTAs */}
+      {/* Abstract Deep-Navy / Cyan / Coral Lunar Cocoon Ambient Backdrop */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        {/* Soft Radial Ambient Glows - Positioned to preserve text-safe space on the left */}
+        <div className="absolute top-1/4 right-0 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(56,200,255,0.09)_0%,transparent_70%)] blur-3xl" />
+        <div className="absolute bottom-10 right-1/4 w-[450px] h-[450px] rounded-full bg-[radial-gradient(circle,rgba(255,118,94,0.06)_0%,transparent_70%)] blur-3xl" />
+        <div className="absolute -top-32 left-1/3 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(66,224,178,0.05)_0%,transparent_70%)] blur-3xl" />
+
+        {/* Tactical Lunar Cocoon Orbital Arcs */}
+        <svg
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-[800px] h-[700px] opacity-25 hidden md:block"
+          viewBox="0 0 800 700"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <ellipse cx="500" cy="350" rx="420" ry="260" stroke="rgba(124,165,216,0.15)" strokeWidth="1" strokeDasharray="6 8" />
+          <ellipse cx="500" cy="350" rx="320" ry="190" stroke="rgba(56,200,255,0.18)" strokeWidth="1.2" />
+          <ellipse cx="500" cy="350" rx="220" ry="130" stroke="rgba(124,165,216,0.12)" strokeWidth="1" strokeDasharray="3 6" />
+          <ellipse cx="500" cy="350" rx="120" ry="70" stroke="rgba(66,224,178,0.2)" strokeWidth="1" />
+          {/* Subtle lunar crescent highlight */}
+          <path
+            d="M 500 90 A 260 260 0 0 1 760 350"
+            stroke="url(#hero_lunar_cyan)"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <defs>
+            <linearGradient id="hero_lunar_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38c8ff" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#42E0B2" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        {/* Left Column: Headline and CTAs (Generous Text-Safe Space) */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -22,7 +56,7 @@ export default function HeroSection({ onLaunchConsole }: HeroSectionProps) {
           className="lg:col-span-6 flex flex-col items-start"
         >
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#081224] border border-[rgba(124,165,216,0.18)] mb-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#081224] border border-[rgba(124,165,216,0.18)] mb-5 shadow-sm">
             <span className="w-1.5 h-1.5 rounded-full bg-[#38c8ff]" aria-hidden="true" />
             <span className="font-mono text-[11px] font-semibold tracking-[0.2em] text-[#38c8ff] uppercase">
               AIR-GAPPED EMERGENCY VOICE INTELLIGENCE

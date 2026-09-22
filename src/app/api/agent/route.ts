@@ -120,16 +120,38 @@ CRITICAL LANGUAGE REQUIREMENT:
 4. Keep response under 35 words so it can be spoken rapidly over emergency audio dispatch. Do not use markdown, formatting, or bullet points.
 5. If the protocol ID is UNKNOWN, respond with: "I am transferring you to a human supervisor."`;
 
-    const stream = await groq.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: transcript }
-      ],
-      model: 'qwen/qwen3.8-27b',
-      stream: true,
-      max_tokens: 150,
-      temperature: 0.1,
-    });
+    // Try Llama-3 first as specified by architecture; gracefully fallback to qwen3.8 if Llama-3 is unentitled on current key
+    const primaryModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let stream: any;
+    try {
+      stream = await groq.chat.completions.create({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: transcript }
+        ],
+        model: primaryModel,
+        stream: true,
+        max_tokens: 150,
+        temperature: 0.1,
+      });
+    } catch (modelErr: any) {
+      if (modelErr?.status === 404 || modelErr?.code === 'model_not_found' || modelErr?.message?.includes('does not exist')) {
+        console.warn(`Notice: ${primaryModel} not available on this API key, falling back to qwen/qwen3.8-27b`);
+        stream = await groq.chat.completions.create({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: transcript }
+          ],
+          model: 'qwen/qwen3.8-27b',
+          stream: true,
+          max_tokens: 150,
+          temperature: 0.1,
+        });
+      } else {
+        throw modelErr;
+      }
+    }
 
     // 3. Create a ReadableStream to stream Groq tokens back to the client
     const encoder = new TextEncoder();

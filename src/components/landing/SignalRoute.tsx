@@ -49,18 +49,32 @@ const NODES: NodeItem[] = [
 export default function SignalRoute() {
   const [activeNodeIndex, setActiveNodeIndex] = useState<number>(0);
   const [isAutoCycling, setIsAutoCycling] = useState<boolean>(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState<boolean>(false);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Automatic shifting animation: advances through nodes sequentially
+  // Detect accessibility preference for reduced motion
   useEffect(() => {
-    if (!isAutoCycling) return;
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  // Automatic shifting animation: advances through nodes sequentially (disabled if reduced motion requested)
+  useEffect(() => {
+    if (!isAutoCycling || prefersReducedMotion) return;
 
     const interval = setInterval(() => {
       setActiveNodeIndex((prev) => (prev + 1) % NODES.length);
     }, 2400);
 
     return () => clearInterval(interval);
-  }, [isAutoCycling]);
+  }, [isAutoCycling, prefersReducedMotion]);
 
   const handleManualSelect = (index: number) => {
     setActiveNodeIndex(index);
@@ -68,7 +82,9 @@ export default function SignalRoute() {
     setIsAutoCycling(false);
     if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
     pauseTimeoutRef.current = setTimeout(() => {
-      setIsAutoCycling(true);
+      if (!prefersReducedMotion) {
+        setIsAutoCycling(true);
+      }
     }, 6000);
   };
 
@@ -186,17 +202,21 @@ export default function SignalRoute() {
             opacity="0.6"
           />
 
-          {/* Traveling Signal Pulse Packet (Continuous animation along wave) */}
-          <circle r="6" fill="#38c8ff" filter="url(#glow_filter)">
-            <animateMotion dur="2.4s" repeatCount="indefinite">
-              <mpath href="#signal_wave_path" />
-            </animateMotion>
-          </circle>
-          <circle r="3" fill="#F4F2EA">
-            <animateMotion dur="2.4s" repeatCount="indefinite">
-              <mpath href="#signal_wave_path" />
-            </animateMotion>
-          </circle>
+          {/* Traveling Signal Pulse Packet (Continuous animation along wave, omitted if reduced motion preferred) */}
+          {!prefersReducedMotion && (
+            <>
+              <circle r="6" fill="#38c8ff" filter="url(#glow_filter)">
+                <animateMotion dur="2.4s" repeatCount="indefinite">
+                  <mpath href="#signal_wave_path" />
+                </animateMotion>
+              </circle>
+              <circle r="3" fill="#F4F2EA">
+                <animateMotion dur="2.4s" repeatCount="indefinite">
+                  <mpath href="#signal_wave_path" />
+                </animateMotion>
+              </circle>
+            </>
+          )}
         </svg>
 
         {/* 4 Connected Nodes with Active Highlight State */}
@@ -287,8 +307,8 @@ export default function SignalRoute() {
       </div>
 
       {/* Reduced-Motion Fallback Static Banner */}
-      <div className="hidden motion-reduce:block text-center py-1.5 px-3 bg-[#081224] rounded-lg border border-[rgba(124,165,216,0.2)]">
-        <span className="font-mono text-xs text-[#42E0B2]">
+      <div className={`${prefersReducedMotion ? "block my-2" : "hidden motion-reduce:block"} text-center py-2 px-4 bg-[#081224] rounded-xl border border-[#42E0B2]/30 shadow-inner`}>
+        <span className="font-mono text-xs sm:text-sm font-bold text-[#42E0B2] tracking-wider uppercase">
           PIPELINE ACTIVE — MOSS RETRIEVAL 8.2MS
         </span>
       </div>
